@@ -1,7 +1,7 @@
 gui-mobile-plugin
 =================
 
-移动端 webApp 插件, 基于 jQuery, iScroll
+移动端 webApp 插件, 依赖 jQuery, iScroll
 
 
 Confirm
@@ -20,12 +20,12 @@ Confirm
 ###options:
 
 ```js
-> appendTo: 'body', //String 插入到，默认 body
-> title: null, //String 标题文字
-> footer: true, //是否显示 footer 的按钮
-> abletouchmove: false,//是否阻止底层 div 滚动
-> content: null, //Function | String | DOM element 设置 confirm 的内容
-> callback: null //Function 回调
+ appendTo: 'body', //String 插入到，默认 body
+ title: null, //String 标题文字
+ footer: true, //是否显示 footer 的按钮
+ abletouchmove: false,//是否阻止底层 div 滚动
+ content: null, //Function | String | DOM element 设置 confirm 的内容
+ callback: null //Function 回调
 ```
 
 
