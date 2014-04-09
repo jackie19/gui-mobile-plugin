@@ -8,16 +8,19 @@
 </head>
 <body>
 
-<span>confirm:</span>
-<button type="button" id="test-confirm-text">确认提示框</button>
-<br /><br />
-<span>confirm:</span>
-<input type="text" id="test-confirm-input" placeholder="输入文字">
+<ul>
+    <li><span>confirm:</span>
+        <button type="button" id="test-confirm-text">确认提示框</button></li>
+    <li> <span>confirm1:</span>
+        <input type="text" id="test-confirm-input" placeholder="输入文字">
+    </li>
+    <li><span>datepicker:</span>
+        <input type="text" id="test-confirm-date" placeholder="">
+    </li>
 
-<br /><br />
-<span>datepicker:</span>
-<input type="text" id="test-confirm-date" placeholder="">
 
+
+</ul>
 
 <script type="text/javascript" src="../libs/jquery-1.4.4.min.js"></script>
 <script type="text/javascript" src="../libs/iscroll.js"></script>
@@ -26,70 +29,75 @@
     $(function () {
 
 //        二次确认
+        var myConfirm = $.mobileConfirm();
         $('#test-confirm-text').bind('click touchstart', function () {
-            $.mobileConfirm({
-                title   : '确认删除',
-                content : '<span style="font-size:12px">删除到回收站，是否确认删除？</span>',
+            myConfirm.init({
+                title: '确认删除',
+                content: '<span style="font-size:12px">删除到回收站，是否确认删除？</span>',
                 callback: function () {
                     console.log(this.result);
                 }
-            });
+            })
+                    .show();
+
         });
 
-
         //输入框
-        $('#test-confirm-input').bind('click touchstart', function () {
+        var input = document.createElement('input');
+        input.className = 'ui-input-txt';
 
-            var self = this;
-            var input = document.createElement('input');
-            input.className = 'ui-input-txt';
-            input.value = self.value || '';
-            $.mobileConfirm({
-                title   : '新建文件夹',
-                content : function () {
+        $('#test-confirm-input').bind('click touchstart', function () {
+            var testConfirmInput = this;
+            input.value = testConfirmInput.value || '';
+
+            myConfirm.init({
+                title: '新建文件夹',
+                content: function () {
                     this.content.html(input);
-                    $('.ui-input-txt', this.content).focus();
                 },
                 callback: function () {
                     if (this.result) {
                         console.log(input.value);
-                        self.value = input.value;
+                        testConfirmInput.value = input.value;
                     }
                 }
             });
+            myConfirm.show()
+                    .wait(function () {
+                        $('.ui-input-txt', myConfirm.content).focus();
+                    }
+            );
         });
 
 //        日历选择
-        var datePicker;
         $('#test-confirm-date').bind('click touchstart ', function () {
-
-            var self = this,
+            var datePicker,
                     date;
-            $.mobileConfirm({
-
-                content : function () {
+            myConfirm.init({
+                baseConentExtend: true, //设置confirm`s visibility:hidden
+                content: function () {
                     var dt = this;
-
-                    $.mobileDatePicker({
-                        setDate       : self.value || new Date(),
-                        format        : 'Y-m-d H:i',
+                    datePicker = $.mobileDatePicker({
+                        setDate: $('#test-confirm-date')[0].value || new Date(),//设置初始时间
+                        format: 'Y-m-d H:i',//设置时间格式
                         onBeforeCreate: function () {
-                            datePicker = this;
-                            dt.content.html(datePicker.html); //set Confirm content Dom
+//                            dt.content.html(this.html); //set Confirm content Dom
+                            dt.setContent(this.html);
                         },
-                        onChange      : function () {
+                        onChange: function () {
                             date = this.date;
-//                        console.log('this.date is ===' + this.date);
 //                        console.log('month is ===' + datePicker.getNewDate().getMonth());
                         }
                     });
                 },
                 callback: function () {
                     if (this.result) {
-                        self.value = date || datePicker.date;
+                        $('#test-confirm-date')[0].value = date || datePicker.date;
+
                     }
                 }
             });
+            myConfirm.show();
         });
 
     });

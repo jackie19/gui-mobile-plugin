@@ -43,7 +43,6 @@
         return __super;
     })();
 
-
 // 更新：
 // 05.27: 1、保证回调执行顺序：error > ready > load；2、回调函数this指向img本身
 // 04-02: 1、增加图片完全加载后的回调 2、提高性能
@@ -149,9 +148,9 @@
 
         __extends(mobileConfirm.fn, {
             init: function (options) {
-                var opts = $.extend({ }, $.mobileConfirm_defaults, options),
+                var opts,
                     htmlTpl = '<div class="ui-mask" data-role="footer" date-position="fixed"></div>' +
-                        '<div class="ui-confirm ui-transition" data-role="footer" date-position="fixed">' +
+                        '<div class="ui-confirm" data-role="footer" date-position="fixed">' +
                         '<header class="ui-confirm-header"> ' +
                         '<div class="ui-title"></div>' +
                         '</header>' +
@@ -163,68 +162,123 @@
                         '</div>';
                 var _this = this;
 
-                var $self = $(htmlTpl);
-                $(opts.appendTo).append($self);
+                if (options) {
+                    opts = $.extend({ }, $.mobileConfirm_defaults, options);
+                } else {
+                    return;
+                }
 
-                _this.mask = $('.ui-mask', opts.appendTo);
-                _this.confirm = $('.ui-confirm', opts.appendTo);
-                _this.btn = $('.ui-btn', $self);
-                _this.content = $('.ui-confirm-content', $self);
-                _this.header = $('.ui-confirm-header', $self);
-                _this.footer = $('.ui-confirm-footer', $self);
+                if(!_this.$self){
+                    _this.$self = $(htmlTpl)
+                    if(opts.baseConentExtend){
+                        _this.$self.css('visibility','hidden');
+                    } else {
+                        _this.$self.hide();
+                    }
+                    $(opts.appendTo).append(_this.$self);
+                    _this.mask = $(_this.$self[0]);
+                    _this.confirm = $(_this.$self[1]);
+                    _this.setPos(_this);
+                    _this.btn = $('.ui-btn', _this.$self);
+                    _this.content = $('.ui-confirm-content', _this.$self);
+                    _this.header = $('.ui-confirm-header', _this.$self);
+                    _this.footer = $('.ui-confirm-footer', _this.$self);
+                    _this._unbind = true;
+                    _this.speed = 1;
+                }
+
                 if (!opts.title) {
                     _this.header.hide();
                 } else {
-                    $('.ui-title', _this.header).text(opts.title);
+                    _this.setTitle(opts.title, _this);
                 }
+
                 if (!opts.footer) {
                     _this.footer.hide();
                 }
+                _this.callback = opts.callback;
 //                set content
-                if ($.isFunction(opts.content)) {
-                    opts.content.call(_this);
-                } else {
-                    _this.content.append(opts.content);
+                _this.setContent(opts.content, _this);
+
+                //bind btn
+                _this.bind(opts, _this);
+
+                if (!options.abletouchmove) {
+                    document.addEventListener('touchmove', _this.handle, false);
                 }
+                return _this;
+            },
 
-                //重置位置
+            bind: function (opts, _this) {
 
+                if(this._unbind){
+                    _this._unbind = false;
+                    _this.btn.bind('click', function (event) {
+                        _this.result = $(this).hasClass('ok');
+                        if (_this.callback) {
+                            _this.callback.call(_this);
+                        }
+                        event.stopPropagation();
+                        event.preventDefault();
+                        _this.hide(_this);
+                    });
+                }
+                return this;
+            },
+            setTitle: function (title, _this) {
+                _this.header.show();
+                $('.ui-title', _this.header).text(title);
+            },
+            setContent: function (content, _this) {
+                //设置confirm 的内容
+                var _this = _this || this;
+                if ($.isFunction(content)) {
+                    content.call(_this);
+                } else {
+                    _this.content.html(content);
+                }
+                return this;
+            },
+            setPos:function(_this){
                 if ($.browser.webkit) {
                     _this.confirm.css('-webkit-transform', 'translateY(-50%)');
                 } else {
                     var marginTop = -(_this.confirm.height() / 2);
                     _this.confirm.css('marginTop', marginTop);
                 }
-                //bind btn
-                _this.bind(opts);
-
-                if (!options.abletouchmove) {
-                    document.addEventListener('touchmove', _this.handle, false);
-                }
             },
-
-            bind   : function (opts) {
-                var _this = this;
-                _this.btn.bind('click', function (event) {
-                    _this.result = $(this).hasClass('ok');
-                    if (opts.callback) {
-                        opts.callback.call(_this);
-                    }
-                    event.stopPropagation();
-                    event.preventDefault();
-                    _this.destroy();
-                    return false;
-                });
+            show: function () {
+                this.mask.show();
+                this.confirm.show();
+                this.$self.css('visibility','visible');
+                return this;
+            },
+            hide: function (_this) {
+                _this.confirm.css('visibility','hidden');
+                _this.mask.fadeOut(201);
+//                this.confirm.hide();
+                return _this;
+            },
+            wait: function () {
+                var arg;
+                arg = [].slice.call(arguments);
+                while (arg.length != 0) {
+                    var func = arg.shift();
+                    setTimeout(func.bind(this), this.speed);
+                }
             },
             destroy: function () {
                 this.btn.unbind();
+                this._unbind = true;
                 this.mask.fadeOut(201, function () {
                     $(this).remove();
                 });
                 this.confirm.remove();
+                this.$self = null;
                 document.removeEventListener('touchmove', this.handle, false);
+                return this;
             },
-            handle : function (event) {
+            handle: function (event) {
                 event.preventDefault();
 //                document.body.style.overflowY = document.body.style.overflowX = 'hidden';
             }
@@ -234,14 +288,14 @@
 
     $.mobileConfirm = mobileConfirm;
     $.mobileConfirm_defaults = {
-        appendTo     : 'body', //String
-        title        : null, //String
-        footer       : true,
+        appendTo: 'body', //String
+        title: null, //String
+        footer: true,
         abletouchmove: false,
-        content      : null, //Function | String | DOM element
+        content: null, //Function | String | DOM element
 //        cancelBtnTxt:'取消',
 //        okBtnTxt:'确定',
-        callback     : null //Function
+        callback: null //Function
     };
     /***************confirm*/
     /*datepicker************************/
@@ -255,8 +309,9 @@
         }
 
         __extends(mobileDatePicker.fn, {
-            init        : function (options) {
-                var opts = $.extend({}, $.mobileDatePicker_defaults, options),
+            init: function (options) {
+                var boxHeight, itemHeight,
+                    opts ,
                     arr_id = [], //5个 isroll
                     arr_mday = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
                     _this = this;
@@ -286,8 +341,12 @@
                     '</div>' +
                     '</div>';
 
-                _this.options = opts;
-                options = opts;
+                if (options) {
+                    opts = $.extend({}, $.mobileDatePicker_defaults, options),
+                        _this.options = opts;
+                    options = opts;
+                }
+
                 if (options.onBeforeCreate) {
 //                options.onBeforeCreate(_this);
                     options.onBeforeCreate.call(_this);
@@ -311,8 +370,8 @@
                     $(minute).closest().hide();
                 }
 
-                var boxHeight = $(year).closest('.ui-date-selectbox').height(), //容器高
-                    itemHeight = Math.floor(boxHeight / 3);//数字高
+                boxHeight = $(year).closest('.ui-date-selectbox').height();
+                itemHeight = Math.floor(boxHeight / 3);//数字高
 
                 document.documentElement.style.webkitUserSelect = 'none';
 
@@ -335,7 +394,10 @@
                 }
 
                 //获取当月天数
-                function GetMDay(year, month) {
+                /**
+                 * @return {number}
+                 */
+                function getMDay(year, month) {
                     if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
                         arr_mday[1] = 29;
                     } else {
@@ -344,7 +406,10 @@
                     return arr_mday[month - 1];
                 }
 
-                function ToString(str) {
+                /**
+                 * @return {string}
+                 */
+                function toString(str) {
                     return str < 10 ? '0' + str : str.toString();
                 }
 
@@ -356,56 +421,55 @@
                         this._date = dateObj ? dateObj : new Date();
                         return this;
                     },
-                    Y   : function () {
-                        return ToString(this._date.getFullYear());
+                    Y: function () {
+                        return toString(this._date.getFullYear());
                     },
-                    m   : function () {
-                        return ToString(this._date.getMonth() + 1);
+                    m: function () {
+                        return toString(this._date.getMonth() + 1);
                     },
-                    d   : function () {
-                        return ToString(this._date.getDate());
+                    d: function () {
+                        return toString(this._date.getDate());
                     },
-                    H   : function () {
-                        return ToString(this._date.getHours());
+                    H: function () {
+                        return toString(this._date.getHours());
                     },
-                    i   : function () {
-                        return ToString(this._date.getMinutes());
+                    i: function () {
+                        return toString(this._date.getMinutes());
                     },
                     _get: function (match) {
                         return DateFormat[match]();
                     },
-                    get : function () { //return  string of date
+                    get: function () { //return  string of date
                         return this._str.replace(/\b(\w+)\b/g, this._get);
                     }
                 });
                 _this.SetDate = {};
                 $.extend(_this.SetDate, {
-                    init  : function () {
+                    init: function () {
                         this._date = new Date();
                         return this;
                     },
-                    year  : function (newYear) {
+                    year: function (newYear) {
                         this._date.setFullYear(newYear);
                     },
-                    month : function (newMonth) {
+                    month: function (newMonth) {
                         var val = newMonth - 1;
                         this._date.setMonth(val);
                     },
-                    day   : function (newDay) {
+                    day: function (newDay) {
                         this._date.setDate(newDay);
                     },
-                    hour  : function (newHour) {
+                    hour: function (newHour) {
                         this._date.setHours(newHour);
                     },
                     minute: function (newMinute) {
                         this._date.setMinutes(newMinute);
                     },
-                    get   : function () {
+                    get: function () {
                         return this._date;
                     }
                 });
                 _this.html = options.html;
-
 
                 if (typeof options.setDate == "object") {
 //                    DateFormat.init(options.format, options.setDate); // 'Y/m/d H:i' , Date Object
@@ -431,7 +495,7 @@
                             AppendHtml(1, 12, month);
                             break;
                         case options.dayId:
-                            AppendHtml(1, GetMDay(year.dataset.v, month.dataset.v), day);
+                            AppendHtml(1, getMDay(year.dataset.v, month.dataset.v), day);
                             break;
                         case options.hourId:
                             AppendHtml(0, 24, hour);
@@ -441,9 +505,9 @@
                             break;
                     }
                     _this[arr_id[i].id] = new iScroll($(arr_id[i]).parent()[0], {
-                        hScrollbar         : false,
-                        vScrollbar         : false,
-                        hScroll            : false,
+                        hScrollbar: false,
+                        vScrollbar: false,
+                        hScroll: false,
                         onBeforeScrollStart: function () { //onBeforeScrollStart  onBeforeScrollMove
                             this.stop();
                             return false;
@@ -467,10 +531,10 @@
                             };
                             setTimeout(end, 500);
                         },
-                        onScrollMove       : function () {
+                        onScrollMove: function () {
                             $('li', this.scroller).removeClass('ui-active');
                         },
-                        onScrollEnd        : function () {
+                        onScrollEnd: function () {
 
                             if (this.distY != undefined) {
                                 var current,
@@ -508,7 +572,7 @@
                                         index = 0,
                                         scrollTo,
                                         day_index;
-                                    AppendHtml(1, GetMDay(year.dataset.v, month.dataset.v), day);
+                                    AppendHtml(1, getMDay(year.dataset.v, month.dataset.v), day);
                                     $('.ui-date-li', day).each(function (idx, v) {
                                         if (this.innerHTML == tempDay) {
                                             index = idx;
@@ -516,7 +580,7 @@
                                     });
                                     if (_this['day']) {
                                         _this['day'].refresh();
-                                        day_index = GetMDay(year.dataset.v || '', month.dataset.v || '') - 1;
+                                        day_index = getMDay(year.dataset.v || '', month.dataset.v || '') - 1;
                                         scrollTo = -parseInt(( index || day_index ) * itemHeight);
                                         _this['day'].scrollTo(0, scrollTo);
                                         $($('.ui-date-li', day)[index || day_index]).addClass('ui-active');
@@ -544,13 +608,13 @@
             _pushDefault: function (match) {
                 this._defaultTime.push(match);
             },
-            getNewDate  : function () {
+            getNewDate: function () {
                 return this.SetDate.get();
             },
-            destroy     : function () {
+            destroy: function () {
                 document.removeEventListener('touchmove', this.handle, false);
             },
-            handle      : function (event) {
+            handle: function (event) {
                 event.preventDefault();
             }
         });
@@ -559,19 +623,18 @@
 
     $.mobileDatePicker = mobileDatePicker;
     $.mobileDatePicker_defaults = {
-        yearId        : 'year', //DOM id
-        monthId       : 'month',
-        dayId         : 'day',
-        hourId        : 'hour',
-        minuteId      : 'minute',
-        setDate       : new Date(), //设置初始时间
-        format        : 'Y/m/d H:i', //格式化
-        yearRange     : [2013, 2040], //年范围
-        hasTime       : true, //是否显示时间，需要配合 format
+        yearId: 'year', //DOM id
+        monthId: 'month',
+        dayId: 'day',
+        hourId: 'hour',
+        minuteId: 'minute',
+        setDate: new Date(), //设置初始时间
+        format: 'Y/m/d H:i', //格式化
+        yearRange: [2013, 2040], //年范围
+        hasTime: true, //是否显示时间，需要配合 format
         onBeforeCreate: null,
-        onChange      : null
+        onChange: null
     };
     /***************datepicker*/
-
 
 })(window);
