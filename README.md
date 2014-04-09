@@ -33,6 +33,8 @@ Datepicker
 -----------
 基于 $.mobileConfirm 的扩展
 
+[! Datepicker](https://github.com/jackie19/gui-mobile-plugin/blob/master/demo/datepicker.jpg?raw=true)
+
 ###Usage
 
 ```js
