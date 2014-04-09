@@ -1,8 +1,10 @@
 gui-mobile-plugin
 =================
 
-移动端 web 插件
+移动端 webApp 插件
 
--confirm
+--
+1. confirm
 
--datepicker
+--
+2. datepicker
