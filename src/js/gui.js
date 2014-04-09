@@ -134,7 +134,7 @@
             }
         };
     })();
-    /**********imgReady**************/
+    /***********************imgReady*/
 
     /*confirm************************/
     var mobileConfirm;
@@ -295,7 +295,8 @@
         content: null, //Function | String | DOM element
 //        cancelBtnTxt:'取消',
 //        okBtnTxt:'确定',
-        callback: null //Function
+        callback: null, //Function
+        baseConentExtend: false //依赖 content 获得 DOM
     };
     /***************confirm*/
     /*datepicker************************/
