@@ -28,12 +28,16 @@
 <script type="text/javascript">
     $(function () {
 
-//        二次确认
+
+        //无 new 式声明一个confirm
         var myConfirm = $.mobileConfirm();
+
+        //        二次确认
         $('#test-confirm-text').bind('click touchstart', function () {
+//            初始化
             myConfirm.init({
-                title: '确认删除',
-                content: '<span style="font-size:12px">删除到回收站，是否确认删除？</span>',
+                title: '确认删除', //设置标题
+                content: '<span style="font-size:12px">删除到回收站，是否确认删除？</span>',// 设置内容
                 callback: function () {
                     console.log(this.result);
                 }
